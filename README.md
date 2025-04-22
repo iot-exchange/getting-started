@@ -96,6 +96,69 @@ to use `COAP` or `UDP` with dTLS (with client certificates) as that uses less da
 - The payload field is your message encoded as base64 (this allows for binary payloads from your devices)
 - For testing purposes you can easily decode base64 on https://www.base64decode.org/
 
+### 8. Other protocols
+
+Currently we support the following protocols over the internet: 
+
+| Protocol  | Address                   | Port |
+|-----------|---------------------------|------|
+| https     | receivers.iot-exchange.io | 443  |
+| coap+dtls | receivers.iot-exchange.io | 5684 |
+| udp+dtls  | receivers.iot-exchange.io | 4433 |
+
+For https and coap+dtls requests to all paths are accepted and directly forwarded to the integration you 
+specified for your projects (as are the headers). For udp+dtls you cannot specify the path/headers and the payload
+is directly forwarded to your integrations.
+
+For example uses see [our golang client example](./client-golang/)
+
+To run the golang example you'll need to install golang (>=1.23) and then you can run it like this:  
+```sh
+cd client-golang
+echo -n "<Your message goes here>" | go run main.go /path/to/<your device>.pem
+```
+This will send your message via all 3 protocols.
+If all goes well you'll see something like this:
+
+```
+2025/04/22 09:05:52 --------------------------------------------------------------------------------------
+2025/04/22 09:05:52 => sending message via coap/dtls to receivers.iot-exchange.io:5684
+2025/04/22 09:05:52 <= response: Code: Empty, Token: 46d7880f509acc18, ContentFormat: text/plain; charset=utf-8, Type: Acknowledgement, MessageID: 44904
+2025/04/22 09:05:52 <= done
+2025/04/22 09:05:52 --------------------------------------------------------------------------------------
+2025/04/22 09:05:52 => sending message via udp/dtls to receivers.iot-exchange.io:4433
+2025/04/22 09:05:52 <= done
+2025/04/22 09:05:52 --------------------------------------------------------------------------------------
+2025/04/22 09:05:52 => Sending message via http to https://receivers.iot-exchange.io
+2025/04/22 09:05:53 <= response: &{Status:201 Created StatusCode:201 Proto:HTTP/1.1 ProtoMajor:1 ProtoMinor:1 Header:map[Content-Length:[0] Content-Type:[text/plain] Date:[Tue, 22 Apr 2025 09:05:53 GMT] Server:[fasthttp]] Body:{} ContentLength:0 TransferEncoding:[] Close:false Uncompressed:false Trailer:map[] Request:0xc000154640 TLS:0xc000248180}
+2025/04/22 09:05:53 <= done
+2025/04/22 09:05:53 --------------------------------------------------------------------------------------
+```
+
+If you run it from a different directory you might also see a message like this:
+```
+2025/04/22 09:05:52 [WARNING] unable to load ca.pem; proceeding without checking server certificate
+```
+
+This means it could not load the `ca.pem` that it uses to verify the authenticity of the server.
+For testing purposes this is harmless; for production code always make sure you verify the server certificates with 
+a valid ca.pem 
+
+## Faq
+
+### I get no errors, but I don't see any messages arriving in webhook.site
+
+The free version of https://webhook.site will automatically remove endpoints when they are not used. If you check back 
+on https://webhook.site you might get a new endpoint. 
+If it has been a while since you created the webhook.site endpoint, please check if it has changed and update the 
+endpoint in your project accordingly. 
+
+### In the webhook data the protocol is always the same, regardless of the protocol I use
+
+This is correct. Currently is shows you the metadata of the device and the protocol is the protocol you configured in 
+the iot-exchange when adding/editing the device.
+
+This might change in the future.
 
 ## Need Help?
 If you run into any issues, please contact our [support team](mailto:support@iot-exchange.io)
